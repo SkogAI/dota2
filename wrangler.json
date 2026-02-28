@@ -1,0 +1,7 @@
+{
+  "name": "dota2-helper",
+  "main": "worker-bundle.js",
+  "compatibility_date": "2025-01-01",
+  "routes": [],
+  "workers_dev": true
+}

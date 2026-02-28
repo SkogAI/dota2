@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skogix Dota 2 Draft Helper</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --bg2: #16213e;
+  --bg3: #0f3460;
+  --accent: #e94560;
+  --gold: #f5a623;
+  --green: #4ade80;
+  --red: #f87171;
+  --text: #e0e0e0;
+  --text-dim: #8899aa;
+  --str: #ef4444;
+  --agi: #22c55e;
+  --int: #3b82f6;
+  --all: #eab308;
+  --radiant: #92db4a;
+  --dire: #c23c2a;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Header */
+.header {
+  background: var(--bg2);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--bg3);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.header-left h1 {
+  font-size: 20px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.header-left .subtitle { font-size: 12px; color: var(--text-dim); }
+.player-badge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  padding: 8px 16px;
+}
+.player-badge img { width: 36px; height: 36px; border-radius: 50%; }
+.player-badge .name { font-weight: 700; font-size: 14px; }
+.player-badge .stats { font-size: 11px; color: var(--text-dim); }
+.player-badge .wr-good { color: var(--green); }
+.player-badge .wr-bad { color: var(--red); }
+
+/* Layout */
+.main {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  gap: 16px;
+  padding: 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: calc(100vh - 60px);
+}
+@media (max-width: 1100px) {
+  .main { grid-template-columns: 1fr; }
+}
+
+/* Side panels */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Team panels */
+.team-panel {
+  background: var(--bg2);
+  border-radius: 12px;
+  padding: 14px;
+  border: 2px solid transparent;
+}
+.team-panel.radiant { border-color: var(--radiant); }
+.team-panel.dire { border-color: var(--dire); }
+.team-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.team-label.radiant { color: var(--radiant); }
+.team-label.dire { color: var(--dire); }
+.team-slots { display: flex; flex-direction: column; gap: 6px; }
+.team-slot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 6px 8px;
+  min-height: 44px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.team-slot:hover { background: var(--bg3); }
+.team-slot img { width: 48px; height: 27px; border-radius: 4px; object-fit: cover; }
+.team-slot .hero-name { font-size: 12px; font-weight: 600; }
+.team-slot .hero-wr { font-size: 10px; color: var(--text-dim); }
+.team-slot .remove-btn {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  background: var(--accent); border: none; color: white;
+  width: 18px; height: 18px; border-radius: 50%; cursor: pointer; font-size: 11px;
+  display: none; align-items: center; justify-content: center;
+}
+.team-slot:hover .remove-btn { display: flex; }
+.empty-slot { color: var(--text-dim); font-size: 11px; font-style: italic; }
+
+/* Your Pool panel */
+.pool-panel {
+  background: var(--bg2);
+  border-radius: 12px;
+  padding: 14px;
+  border: 1px solid var(--bg3);
+}
+.pool-panel h3 {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.pool-list { display: flex; flex-direction: column; gap: 3px; }
+.pool-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+  position: relative;
+}
+.pool-item:hover { background: var(--bg3); }
+.pool-item.picked { opacity: 0.3; }
+.pool-item img { width: 32px; height: 18px; border-radius: 3px; object-fit: cover; }
+.pool-item .pool-wr { margin-left: auto; font-weight: 700; font-size: 10px; }
+.pool-item .pool-games { font-size: 9px; color: var(--text-dim); margin-left: 4px; }
+.pool-item .comfort {
+  position: absolute; left: -2px; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 70%; border-radius: 2px;
+}
+
+/* Recommendations */
+.recommendations {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bg3);
+}
+.recommendations h3 {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.rec-list { display: flex; flex-direction: column; gap: 3px; }
+.rec-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px; border-radius: 6px; cursor: pointer;
+  font-size: 11px; transition: all 0.15s;
+}
+.rec-item:hover { background: var(--bg3); }
+.rec-item img { width: 28px; height: 16px; border-radius: 3px; object-fit: cover; }
+.rec-item .adv { margin-left: auto; font-weight: 700; font-size: 10px; }
+.rec-item .adv.good { color: var(--green); }
+.rec-item .adv.bad { color: var(--red); }
+.rec-item .in-pool {
+  font-size: 8px;
+  background: var(--gold);
+  color: #000;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 800;
+}
+
+/* Center: Hero Grid */
+.center-panel { min-width: 0; }
+.controls {
+  display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;
+}
+.search-box {
+  flex: 1; min-width: 180px; padding: 7px 12px;
+  background: var(--bg2); border: 1px solid var(--bg3);
+  border-radius: 8px; color: var(--text); font-size: 13px; outline: none;
+}
+.search-box:focus { border-color: var(--accent); }
+.filter-btn {
+  padding: 5px 12px; background: var(--bg2); border: 1px solid var(--bg3);
+  border-radius: 8px; color: var(--text-dim); cursor: pointer; font-size: 11px; transition: all 0.15s;
+}
+.filter-btn:hover, .filter-btn.active { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+.filter-btn.attr-str.active { border-color: var(--str); color: var(--str); }
+.filter-btn.attr-agi.active { border-color: var(--agi); color: var(--agi); }
+.filter-btn.attr-int.active { border-color: var(--int); color: var(--int); }
+.filter-btn.attr-all.active { border-color: var(--all); color: var(--all); }
+.filter-btn.pool-filter.active { border-color: var(--gold); color: var(--gold); }
+
+.team-pick-toggle { display: flex; gap: 4px; margin-bottom: 10px; }
+.pick-btn {
+  padding: 5px 14px; border-radius: 8px; border: 2px solid transparent;
+  cursor: pointer; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1px; background: var(--bg2); color: var(--text-dim); transition: all 0.15s;
+}
+.pick-btn.radiant.active { border-color: var(--radiant); color: var(--radiant); background: rgba(146,219,74,0.1); }
+.pick-btn.dire.active { border-color: var(--dire); color: var(--dire); background: rgba(194,60,42,0.1); }
+.pick-btn:hover { background: var(--bg3); }
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 5px;
+}
+.hero-card {
+  position: relative; border-radius: 6px; overflow: hidden;
+  cursor: pointer; transition: all 0.15s; border: 2px solid transparent;
+  aspect-ratio: 16/9;
+}
+.hero-card:hover { transform: scale(1.08); z-index: 2; border-color: var(--accent); }
+.hero-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.hero-card .overlay {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  padding: 2px 4px; font-size: 9px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.hero-card.picked-radiant { border-color: var(--radiant); opacity: 0.4; }
+.hero-card.picked-dire { border-color: var(--dire); opacity: 0.4; }
+.hero-card.picked-radiant:hover, .hero-card.picked-dire:hover { transform: none; cursor: default; }
+
+/* Personal WR indicator on cards */
+.hero-card .personal-wr {
+  position: absolute; top: 2px; left: 2px;
+  font-size: 8px; font-weight: 800; padding: 1px 3px; border-radius: 3px;
+  display: none;
+}
+.hero-card .personal-wr.show { display: block; }
+.hero-card .personal-wr.good { background: rgba(74,222,128,0.85); color: #000; }
+.hero-card .personal-wr.bad { background: rgba(248,113,113,0.85); color: #000; }
+.hero-card .personal-wr.neutral { background: rgba(255,255,255,0.5); color: #000; }
+
+.hero-card .adv-badge {
+  position: absolute; top: 2px; right: 2px;
+  font-size: 8px; font-weight: 800; padding: 1px 3px; border-radius: 3px;
+  display: none;
+}
+.hero-card .adv-badge.show { display: block; }
+.hero-card .adv-badge.good { background: rgba(74,222,128,0.9); color: #000; }
+.hero-card .adv-badge.bad { background: rgba(248,113,113,0.9); color: #000; }
+
+/* Gold border for heroes in your pool */
+.hero-card.in-pool { border-color: rgba(245,166,35,0.4); }
+.hero-card.in-pool:hover { border-color: var(--gold); }
+
+/* Hero Detail Modal */
+.modal-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7); z-index: 100;
+  justify-content: center; align-items: center; padding: 20px;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: var(--bg2); border-radius: 16px; padding: 24px;
+  max-width: 720px; width: 100%; max-height: 85vh; overflow-y: auto;
+  position: relative; border: 2px solid var(--bg3);
+}
+.modal-close {
+  position: absolute; top: 12px; right: 16px;
+  background: none; border: none; color: var(--text-dim); font-size: 24px; cursor: pointer;
+}
+.modal-close:hover { color: var(--text); }
+.modal-header { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.modal-header img { width: 128px; height: 72px; border-radius: 8px; object-fit: cover; }
+.modal-header h2 { font-size: 22px; }
+.modal-header .hero-meta { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+/* Personal stats in modal */
+.personal-stats {
+  background: linear-gradient(135deg, rgba(245,166,35,0.1), rgba(233,69,96,0.1));
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+.personal-stats h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--gold); margin-bottom: 8px;
+}
+.personal-stats-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+}
+.ps-item { text-align: center; }
+.ps-item .ps-label { font-size: 9px; text-transform: uppercase; color: var(--text-dim); }
+.ps-item .ps-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 8px; margin-bottom: 16px;
+}
+.stat-card { background: var(--bg); border-radius: 8px; padding: 8px; text-align: center; }
+.stat-card .stat-label { font-size: 9px; text-transform: uppercase; color: var(--text-dim); letter-spacing: 1px; }
+.stat-card .stat-value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+
+.matchup-section h3 {
+  font-size: 13px; margin-bottom: 8px; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 1px;
+}
+.matchup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.matchup-list { display: flex; flex-direction: column; gap: 3px; }
+.matchup-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 8px; border-radius: 6px; font-size: 11px; background: var(--bg);
+}
+.matchup-item img { width: 28px; height: 16px; border-radius: 3px; object-fit: cover; }
+.matchup-item .mu-adv { margin-left: auto; font-weight: 700; font-size: 10px; }
+
+.spinner {
+  display: inline-block; width: 14px; height: 14px;
+  border: 2px solid var(--text-dim); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text-dim); font-size: 11px; display: flex; align-items: center; gap: 6px; }
+
+.clear-btn {
+  padding: 3px 8px; background: var(--accent); border: none;
+  border-radius: 6px; color: white; cursor: pointer; font-size: 10px; font-weight: 600;
+}
+.clear-btn:hover { opacity: 0.8; }
+
+/* Tab bar for pool panel */
+.tab-bar { display: flex; gap: 2px; margin-bottom: 8px; }
+.tab-btn {
+  flex: 1; padding: 4px 8px; background: var(--bg); border: none;
+  border-radius: 6px; color: var(--text-dim); cursor: pointer; font-size: 10px;
+  font-weight: 600; text-transform: uppercase; transition: all 0.15s;
+}
+.tab-btn.active { background: var(--bg3); color: var(--text); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Skogix Draft Helper</h1>
+    <div class="subtitle">Personalized counter picks & recommendations</div>
+  </div>
+  <div class="player-badge">
+    <img src="https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_medium.jpg" alt="Skogix">
+    <div>
+      <div class="name">Skogix</div>
+      <div class="stats">1,577W / 1,762L &middot; <span id="overall-wr">47.2%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- Left: Radiant + Your Pool -->
+  <div class="side-panel">
+    <div class="team-panel radiant">
+      <div class="team-label radiant">
+        <span>Radiant</span>
+        <button class="clear-btn" onclick="clearTeam('radiant')">Clear</button>
+      </div>
+      <div class="team-slots" id="radiant-slots"></div>
+      <div class="recommendations" id="radiant-recs">
+        <h3>Suggested for you</h3>
+        <div class="rec-list" id="radiant-rec-list">
+          <div class="loading-text">Pick enemy heroes to see suggestions</div>
+        </div>
+      </div>
+    </div>
+    <div class="pool-panel">
+      <h3>Your Hero Pool</h3>
+      <div class="tab-bar">
+        <button class="tab-btn active" onclick="setPoolTab('best')">Best</button>
+        <button class="tab-btn" onclick="setPoolTab('most')">Most Played</button>
+        <button class="tab-btn" onclick="setPoolTab('recent')">Recent</button>
+      </div>
+      <div class="pool-list" id="pool-list"></div>
+    </div>
+  </div>
+
+  <!-- Center: Hero Grid -->
+  <div class="center-panel">
+    <div class="controls">
+      <input type="text" class="search-box" id="search" placeholder="Search heroes...">
+      <button class="filter-btn attr-str" data-attr="str" onclick="toggleAttr(this)">STR</button>
+      <button class="filter-btn attr-agi" data-attr="agi" onclick="toggleAttr(this)">AGI</button>
+      <button class="filter-btn attr-int" data-attr="int" onclick="toggleAttr(this)">INT</button>
+      <button class="filter-btn attr-all" data-attr="all" onclick="toggleAttr(this)">UNI</button>
+      <button class="filter-btn pool-filter" id="pool-filter-btn" onclick="togglePoolFilter()">MY POOL</button>
+    </div>
+    <div class="team-pick-toggle">
+      <button class="pick-btn radiant active" id="pick-radiant" onclick="setPickTeam('radiant')">Pick Radiant</button>
+      <button class="pick-btn dire" id="pick-dire" onclick="setPickTeam('dire')">Pick Dire</button>
+    </div>
+    <div class="hero-grid" id="hero-grid"></div>
+  </div>
+
+  <!-- Right: Dire + Recs -->
+  <div class="side-panel">
+    <div class="team-panel dire">
+      <div class="team-label dire">
+        <span>Dire</span>
+        <button class="clear-btn" onclick="clearTeam('dire')">Clear</button>
+      </div>
+      <div class="team-slots" id="dire-slots"></div>
+      <div class="recommendations" id="dire-recs">
+        <h3>Suggested for you</h3>
+        <div class="rec-list" id="dire-rec-list">
+          <div class="loading-text">Pick enemy heroes to see suggestions</div>
+        </div>
+      </div>
+    </div>
+    <div class="pool-panel">
+      <h3>Avoid (low WR)</h3>
+      <div class="pool-list" id="avoid-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="document.getElementById('modal-overlay').classList.remove('show')">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ====== Data ======
+const HEROES = [{"id":102,"name":"Abaddon","npcName":"npc_dota_hero_abaddon","attr":"all","attack":"Melee","roles":["Support","Carry","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/abaddon.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/abaddon.png?","baseStr":21,"baseAgi":22,"baseInt":18,"strGain":2.6,"agiGain":1.5,"intGain":2,"moveSpeed":325,"armor":-1,"attackRange":150,"winRate":50.1,"totalPicks":114656},{"id":73,"name":"Alchemist","npcName":"npc_dota_hero_alchemist","attr":"str","attack":"Melee","roles":["Carry","Support","Durable","Disabler","Initiator","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/alchemist.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/alchemist.png?","baseStr":23,"baseAgi":22,"baseInt":25,"strGain":2.7,"agiGain":1.5,"intGain":1.8,"moveSpeed":295,"armor":0,"attackRange":150,"winRate":50.6,"totalPicks":154205},{"id":68,"name":"Ancient Apparition","npcName":"npc_dota_hero_ancient_apparition","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/ancient_apparition.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/ancient_apparition.png?","baseStr":20,"baseAgi":20,"baseInt":23,"strGain":1.9,"agiGain":2,"intGain":3.1,"moveSpeed":285,"armor":-1,"attackRange":675,"winRate":50.8,"totalPicks":225735},{"id":1,"name":"Anti-Mage","npcName":"npc_dota_hero_antimage","attr":"agi","attack":"Melee","roles":["Carry","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/antimage.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/antimage.png?","baseStr":21,"baseAgi":24,"baseInt":12,"strGain":1.6,"agiGain":2.8,"intGain":1.8,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":50.8,"totalPicks":391661},{"id":113,"name":"Arc Warden","npcName":"npc_dota_hero_arc_warden","attr":"all","attack":"Ranged","roles":["Carry","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/arc_warden.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/arc_warden.png?","baseStr":20,"baseAgi":20,"baseInt":24,"strGain":2.4,"agiGain":3,"intGain":2.6,"moveSpeed":285,"armor":0,"attackRange":625,"winRate":51.4,"totalPicks":101649},{"id":2,"name":"Axe","npcName":"npc_dota_hero_axe","attr":"str","attack":"Melee","roles":["Initiator","Durable","Disabler","Carry"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/axe.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/axe.png?","baseStr":25,"baseAgi":20,"baseInt":18,"strGain":2.8,"agiGain":1.7,"intGain":1.6,"moveSpeed":315,"armor":0,"attackRange":150,"winRate":50.8,"totalPicks":507168},{"id":3,"name":"Bane","npcName":"npc_dota_hero_bane","attr":"all","attack":"Ranged","roles":["Support","Disabler","Nuker","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/bane.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/bane.png?","baseStr":23,"baseAgi":23,"baseInt":23,"strGain":2.7,"agiGain":2.7,"intGain":2.7,"moveSpeed":305,"armor":1,"attackRange":400,"winRate":49.7,"totalPicks":57477},{"id":65,"name":"Batrider","npcName":"npc_dota_hero_batrider","attr":"all","attack":"Ranged","roles":["Initiator","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/batrider.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/batrider.png?","baseStr":23,"baseAgi":13,"baseInt":22,"strGain":2.9,"agiGain":1.8,"intGain":2.9,"moveSpeed":320,"armor":2,"attackRange":400,"winRate":46.1,"totalPicks":80614},{"id":38,"name":"Beastmaster","npcName":"npc_dota_hero_beastmaster","attr":"all","attack":"Melee","roles":["Initiator","Disabler","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/beastmaster.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/beastmaster.png?","baseStr":25,"baseAgi":19,"baseInt":16,"strGain":2.9,"agiGain":1.9,"intGain":1.9,"moveSpeed":305,"armor":-1,"attackRange":150,"winRate":46.8,"totalPicks":158790},{"id":4,"name":"Bloodseeker","npcName":"npc_dota_hero_bloodseeker","attr":"agi","attack":"Melee","roles":["Carry","Disabler","Nuker","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/bloodseeker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/bloodseeker.png?","baseStr":24,"baseAgi":24,"baseInt":17,"strGain":2.7,"agiGain":3.1,"intGain":2,"moveSpeed":285,"armor":2,"attackRange":150,"winRate":51.0,"totalPicks":111870},{"id":62,"name":"Bounty Hunter","npcName":"npc_dota_hero_bounty_hunter","attr":"agi","attack":"Melee","roles":["Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/bounty_hunter.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/bounty_hunter.png?","baseStr":19,"baseAgi":21,"baseInt":20,"strGain":2.5,"agiGain":2.6,"intGain":1.9,"moveSpeed":325,"armor":5,"attackRange":150,"winRate":50.8,"totalPicks":161622},{"id":78,"name":"Brewmaster","npcName":"npc_dota_hero_brewmaster","attr":"all","attack":"Melee","roles":["Carry","Initiator","Durable","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/brewmaster.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/brewmaster.png?","baseStr":23,"baseAgi":19,"baseInt":17,"strGain":3.2,"agiGain":2,"intGain":1.9,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":50.8,"totalPicks":39705},{"id":99,"name":"Bristleback","npcName":"npc_dota_hero_bristleback","attr":"str","attack":"Melee","roles":["Carry","Durable","Initiator","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/bristleback.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/bristleback.png?","baseStr":22,"baseAgi":17,"baseInt":14,"strGain":2.8,"agiGain":1.8,"intGain":2.8,"moveSpeed":295,"armor":1,"attackRange":150,"winRate":47.6,"totalPicks":192148},{"id":61,"name":"Broodmother","npcName":"npc_dota_hero_broodmother","attr":"agi","attack":"Melee","roles":["Carry","Pusher","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/broodmother.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/broodmother.png?","baseStr":18,"baseAgi":18,"baseInt":18,"strGain":2.9,"agiGain":3.4,"intGain":2,"moveSpeed":285,"armor":-1,"attackRange":175,"winRate":52.9,"totalPicks":110604},{"id":96,"name":"Centaur Warrunner","npcName":"npc_dota_hero_centaur","attr":"str","attack":"Melee","roles":["Durable","Initiator","Disabler","Nuker","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/centaur.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/centaur.png?","baseStr":27,"baseAgi":15,"baseInt":15,"strGain":4,"agiGain":1,"intGain":1.6,"moveSpeed":305,"armor":-2,"attackRange":150,"winRate":50.7,"totalPicks":200541},{"id":81,"name":"Chaos Knight","npcName":"npc_dota_hero_chaos_knight","attr":"str","attack":"Melee","roles":["Carry","Disabler","Durable","Pusher","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/chaos_knight.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/chaos_knight.png?","baseStr":24,"baseAgi":18,"baseInt":18,"strGain":3.1,"agiGain":1.8,"intGain":1.2,"moveSpeed":325,"armor":2,"attackRange":150,"winRate":52.4,"totalPicks":178282},{"id":66,"name":"Chen","npcName":"npc_dota_hero_chen","attr":"int","attack":"Ranged","roles":["Support","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/chen.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/chen.png?","baseStr":23,"baseAgi":15,"baseInt":19,"strGain":2,"agiGain":2.1,"intGain":3.2,"moveSpeed":305,"armor":-1,"attackRange":650,"winRate":47.0,"totalPicks":22081},{"id":56,"name":"Clinkz","npcName":"npc_dota_hero_clinkz","attr":"agi","attack":"Ranged","roles":["Carry","Escape","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/clinkz.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/clinkz.png?","baseStr":17,"baseAgi":25,"baseInt":21,"strGain":2,"agiGain":2.7,"intGain":2.2,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":51.5,"totalPicks":272771},{"id":51,"name":"Clockwerk","npcName":"npc_dota_hero_rattletrap","attr":"str","attack":"Melee","roles":["Initiator","Disabler","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/rattletrap.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/rattletrap.png?","baseStr":26,"baseAgi":13,"baseInt":18,"strGain":3.2,"agiGain":2.3,"intGain":1.7,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":51.2,"totalPicks":153642},{"id":5,"name":"Crystal Maiden","npcName":"npc_dota_hero_crystal_maiden","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/crystal_maiden.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/crystal_maiden.png?","baseStr":17,"baseAgi":16,"baseInt":20,"strGain":2.2,"agiGain":1.8,"intGain":3.3,"moveSpeed":280,"armor":0,"attackRange":600,"winRate":50.2,"totalPicks":289653},{"id":55,"name":"Dark Seer","npcName":"npc_dota_hero_dark_seer","attr":"int","attack":"Melee","roles":["Initiator","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/dark_seer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/dark_seer.png?","baseStr":20,"baseAgi":19,"baseInt":22,"strGain":2.6,"agiGain":1.5,"intGain":2.7,"moveSpeed":295,"armor":1,"attackRange":150,"winRate":49.5,"totalPicks":54392},{"id":119,"name":"Dark Willow","npcName":"npc_dota_hero_dark_willow","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/dark_willow.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/dark_willow.png?","baseStr":20,"baseAgi":18,"baseInt":21,"strGain":2,"agiGain":1.6,"intGain":3.5,"moveSpeed":290,"armor":0,"attackRange":475,"winRate":49.1,"totalPicks":154030},{"id":135,"name":"Dawnbreaker","npcName":"npc_dota_hero_dawnbreaker","attr":"str","attack":"Melee","roles":["Carry","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/dawnbreaker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/dawnbreaker.png?","baseStr":25,"baseAgi":14,"baseInt":20,"strGain":3.4,"agiGain":1.7,"intGain":2,"moveSpeed":300,"armor":2,"attackRange":150,"winRate":49.5,"totalPicks":132649},{"id":50,"name":"Dazzle","npcName":"npc_dota_hero_dazzle","attr":"all","attack":"Ranged","roles":["Support","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/dazzle.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/dazzle.png?","baseStr":19,"baseAgi":20,"baseInt":25,"strGain":2.3,"agiGain":1.7,"intGain":3.5,"moveSpeed":305,"armor":0,"attackRange":575,"winRate":52.7,"totalPicks":168482},{"id":43,"name":"Death Prophet","npcName":"npc_dota_hero_death_prophet","attr":"all","attack":"Ranged","roles":["Carry","Pusher","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/death_prophet.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/death_prophet.png?","baseStr":21,"baseAgi":17,"baseInt":24,"strGain":2.9,"agiGain":2,"intGain":3,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":48.8,"totalPicks":104373},{"id":87,"name":"Disruptor","npcName":"npc_dota_hero_disruptor","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/disruptor.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/disruptor.png?","baseStr":21,"baseAgi":15,"baseInt":20,"strGain":2.4,"agiGain":1.4,"intGain":2.9,"moveSpeed":295,"armor":0,"attackRange":625,"winRate":50.1,"totalPicks":215228},{"id":69,"name":"Doom","npcName":"npc_dota_hero_doom_bringer","attr":"str","attack":"Melee","roles":["Carry","Disabler","Initiator","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/doom_bringer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/doom_bringer.png?","baseStr":24,"baseAgi":15,"baseInt":15,"strGain":3.5,"agiGain":1.5,"intGain":1.9,"moveSpeed":290,"armor":2,"attackRange":200,"winRate":45.1,"totalPicks":75138},{"id":49,"name":"Dragon Knight","npcName":"npc_dota_hero_dragon_knight","attr":"str","attack":"Melee","roles":["Carry","Pusher","Durable","Disabler","Initiator","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/dragon_knight.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/dragon_knight.png?","baseStr":21,"baseAgi":14,"baseInt":18,"strGain":3.6,"agiGain":2,"intGain":1.7,"moveSpeed":315,"armor":0,"attackRange":150,"winRate":47.0,"totalPicks":189455},{"id":6,"name":"Drow Ranger","npcName":"npc_dota_hero_drow_ranger","attr":"agi","attack":"Ranged","roles":["Carry","Disabler","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/drow_ranger.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/drow_ranger.png?","baseStr":16,"baseAgi":22,"baseInt":15,"strGain":1.9,"agiGain":2.9,"intGain":1.4,"moveSpeed":310,"armor":0,"attackRange":625,"winRate":51.9,"totalPicks":405742},{"id":107,"name":"Earth Spirit","npcName":"npc_dota_hero_earth_spirit","attr":"str","attack":"Melee","roles":["Nuker","Escape","Disabler","Initiator","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/earth_spirit.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/earth_spirit.png?","baseStr":22,"baseAgi":17,"baseInt":18,"strGain":3.8,"agiGain":2.4,"intGain":2.1,"moveSpeed":290,"armor":0,"attackRange":150,"winRate":49.1,"totalPicks":87427},{"id":7,"name":"Earthshaker","npcName":"npc_dota_hero_earthshaker","attr":"str","attack":"Melee","roles":["Support","Initiator","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/earthshaker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/earthshaker.png?","baseStr":22,"baseAgi":12,"baseInt":18,"strGain":3.7,"agiGain":1.4,"intGain":2.1,"moveSpeed":315,"armor":2,"attackRange":150,"winRate":47.4,"totalPicks":332023},{"id":103,"name":"Elder Titan","npcName":"npc_dota_hero_elder_titan","attr":"str","attack":"Melee","roles":["Initiator","Disabler","Nuker","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/elder_titan.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/elder_titan.png?","baseStr":26,"baseAgi":16,"baseInt":23,"strGain":3,"agiGain":1.8,"intGain":1.6,"moveSpeed":305,"armor":0,"attackRange":150,"winRate":51.6,"totalPicks":27646},{"id":106,"name":"Ember Spirit","npcName":"npc_dota_hero_ember_spirit","attr":"agi","attack":"Melee","roles":["Carry","Escape","Nuker","Disabler","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/ember_spirit.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/ember_spirit.png?","baseStr":22,"baseAgi":22,"baseInt":20,"strGain":2.3,"agiGain":3.2,"intGain":2.2,"moveSpeed":300,"armor":0,"attackRange":150,"winRate":47.3,"totalPicks":184193},{"id":58,"name":"Enchantress","npcName":"npc_dota_hero_enchantress","attr":"int","attack":"Ranged","roles":["Support","Pusher","Durable","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/enchantress.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/enchantress.png?","baseStr":17,"baseAgi":19,"baseInt":22,"strGain":2,"agiGain":2.1,"intGain":4,"moveSpeed":320,"armor":1,"attackRange":575,"winRate":49.5,"totalPicks":67403},{"id":33,"name":"Enigma","npcName":"npc_dota_hero_enigma","attr":"all","attack":"Ranged","roles":["Disabler","Initiator","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/enigma.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/enigma.png?","baseStr":21,"baseAgi":14,"baseInt":19,"strGain":2.5,"agiGain":1,"intGain":3.6,"moveSpeed":280,"armor":1,"attackRange":500,"winRate":51.0,"totalPicks":94205},{"id":41,"name":"Faceless Void","npcName":"npc_dota_hero_faceless_void","attr":"agi","attack":"Melee","roles":["Carry","Initiator","Disabler","Escape","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/faceless_void.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/faceless_void.png?","baseStr":20,"baseAgi":21,"baseInt":15,"strGain":2.6,"agiGain":3.3,"intGain":1.5,"moveSpeed":300,"armor":0,"attackRange":150,"winRate":49.6,"totalPicks":277760},{"id":121,"name":"Grimstroke","npcName":"npc_dota_hero_grimstroke","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/grimstroke.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/grimstroke.png?","baseStr":21,"baseAgi":18,"baseInt":25,"strGain":2.4,"agiGain":1.9,"intGain":3.8,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":50.0,"totalPicks":111760},{"id":72,"name":"Gyrocopter","npcName":"npc_dota_hero_gyrocopter","attr":"agi","attack":"Ranged","roles":["Carry","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/gyrocopter.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/gyrocopter.png?","baseStr":22,"baseAgi":25,"baseInt":21,"strGain":2.5,"agiGain":3.2,"intGain":2.4,"moveSpeed":320,"armor":1,"attackRange":365,"winRate":46.4,"totalPicks":137860},{"id":123,"name":"Hoodwink","npcName":"npc_dota_hero_hoodwink","attr":"agi","attack":"Ranged","roles":["Support","Nuker","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/hoodwink.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/hoodwink.png?","baseStr":17,"baseAgi":25,"baseInt":21,"strGain":2,"agiGain":3.6,"intGain":2.9,"moveSpeed":315,"armor":0,"attackRange":575,"winRate":48.5,"totalPicks":239426},{"id":59,"name":"Huskar","npcName":"npc_dota_hero_huskar","attr":"str","attack":"Ranged","roles":["Carry","Durable","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/huskar.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/huskar.png?","baseStr":23,"baseAgi":10,"baseInt":18,"strGain":3.3,"agiGain":1.5,"intGain":1.5,"moveSpeed":295,"armor":1,"attackRange":400,"winRate":48.3,"totalPicks":176728},{"id":74,"name":"Invoker","npcName":"npc_dota_hero_invoker","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Disabler","Escape","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/invoker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/invoker.png?","baseStr":19,"baseAgi":14,"baseInt":20,"strGain":2.5,"agiGain":2,"intGain":4,"moveSpeed":285,"armor":-1,"attackRange":600,"winRate":51.2,"totalPicks":562265},{"id":91,"name":"Io","npcName":"npc_dota_hero_wisp","attr":"all","attack":"Ranged","roles":["Support","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/wisp.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/wisp.png?","baseStr":19,"baseAgi":14,"baseInt":21,"strGain":3,"agiGain":1.6,"intGain":1.7,"moveSpeed":320,"armor":1,"attackRange":500,"winRate":50.2,"totalPicks":91970},{"id":64,"name":"Jakiro","npcName":"npc_dota_hero_jakiro","attr":"int","attack":"Ranged","roles":["Support","Nuker","Pusher","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/jakiro.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/jakiro.png?","baseStr":25,"baseAgi":15,"baseInt":26,"strGain":2.5,"agiGain":1.2,"intGain":3,"moveSpeed":290,"armor":1,"attackRange":400,"winRate":47.9,"totalPicks":415262},{"id":8,"name":"Juggernaut","npcName":"npc_dota_hero_juggernaut","attr":"agi","attack":"Melee","roles":["Carry","Pusher","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/juggernaut.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/juggernaut.png?","baseStr":20,"baseAgi":32,"baseInt":14,"strGain":2,"agiGain":2.8,"intGain":1.4,"moveSpeed":300,"armor":0,"attackRange":150,"winRate":50.7,"totalPicks":429192},{"id":90,"name":"Keeper of the Light","npcName":"npc_dota_hero_keeper_of_the_light","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/keeper_of_the_light.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/keeper_of_the_light.png?","baseStr":18,"baseAgi":15,"baseInt":24,"strGain":2.3,"agiGain":1.6,"intGain":3.3,"moveSpeed":320,"armor":0,"attackRange":600,"winRate":48.9,"totalPicks":85723},{"id":145,"name":"Kez","npcName":"npc_dota_hero_kez","attr":"agi","attack":"Melee","roles":["Carry","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/kez.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/kez.png?","baseStr":20,"baseAgi":27,"baseInt":20,"strGain":2.8,"agiGain":3.5,"intGain":1.7,"moveSpeed":315,"armor":1,"attackRange":225,"winRate":46.7,"totalPicks":177838},{"id":23,"name":"Kunkka","npcName":"npc_dota_hero_kunkka","attr":"str","attack":"Melee","roles":["Carry","Support","Disabler","Initiator","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/kunkka.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/kunkka.png?","baseStr":24,"baseAgi":14,"baseInt":18,"strGain":3.6,"agiGain":1.6,"intGain":1.8,"moveSpeed":315,"armor":2,"attackRange":150,"winRate":49.9,"totalPicks":140051},{"id":155,"name":"Largo","npcName":"npc_dota_hero_largo","attr":"str","attack":"Melee","roles":["Durable","Disabler","Support"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/largo.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/largo.png?","baseStr":24,"baseAgi":14,"baseInt":21,"strGain":3.6,"agiGain":1.3,"intGain":2.4,"moveSpeed":290,"armor":2,"attackRange":150,"winRate":51.7,"totalPicks":175541},{"id":104,"name":"Legion Commander","npcName":"npc_dota_hero_legion_commander","attr":"str","attack":"Melee","roles":["Carry","Disabler","Initiator","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/legion_commander.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/legion_commander.png?","baseStr":24,"baseAgi":18,"baseInt":20,"strGain":3.1,"agiGain":1.7,"intGain":2.2,"moveSpeed":325,"armor":0,"attackRange":150,"winRate":52.9,"totalPicks":447117},{"id":52,"name":"Leshrac","npcName":"npc_dota_hero_leshrac","attr":"int","attack":"Ranged","roles":["Carry","Support","Nuker","Pusher","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/leshrac.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/leshrac.png?","baseStr":20,"baseAgi":17,"baseInt":22,"strGain":2.8,"agiGain":2.5,"intGain":3.5,"moveSpeed":325,"armor":1,"attackRange":575,"winRate":50.3,"totalPicks":85558},{"id":31,"name":"Lich","npcName":"npc_dota_hero_lich","attr":"int","attack":"Ranged","roles":["Support","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lich.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/lich.png?","baseStr":20,"baseAgi":17,"baseInt":28,"strGain":2.1,"agiGain":2,"intGain":3.8,"moveSpeed":290,"armor":-1,"attackRange":550,"winRate":53.0,"totalPicks":365901},{"id":54,"name":"Lifestealer","npcName":"npc_dota_hero_life_stealer","attr":"str","attack":"Melee","roles":["Carry","Durable","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/life_stealer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/life_stealer.png?","baseStr":23,"baseAgi":15,"baseInt":15,"strGain":2.4,"agiGain":1.9,"intGain":1.8,"moveSpeed":315,"armor":1,"attackRange":150,"winRate":50.8,"totalPicks":186754},{"id":25,"name":"Lina","npcName":"npc_dota_hero_lina","attr":"int","attack":"Ranged","roles":["Support","Carry","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lina.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/lina.png?","baseStr":20,"baseAgi":23,"baseInt":30,"strGain":2.4,"agiGain":2.4,"intGain":4,"moveSpeed":290,"armor":0,"attackRange":670,"winRate":49.0,"totalPicks":342206},{"id":26,"name":"Lion","npcName":"npc_dota_hero_lion","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lion.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/lion.png?","baseStr":18,"baseAgi":15,"baseInt":19,"strGain":2.4,"agiGain":1.7,"intGain":3.5,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":49.5,"totalPicks":726208},{"id":80,"name":"Lone Druid","npcName":"npc_dota_hero_lone_druid","attr":"agi","attack":"Ranged","roles":["Carry","Pusher","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lone_druid.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/lone_druid.png?","baseStr":18,"baseAgi":20,"baseInt":13,"strGain":2.5,"agiGain":2.8,"intGain":1.4,"moveSpeed":295,"armor":0,"attackRange":550,"winRate":50.3,"totalPicks":40360},{"id":48,"name":"Luna","npcName":"npc_dota_hero_luna","attr":"agi","attack":"Ranged","roles":["Carry","Nuker","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/luna.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/luna.png?","baseStr":21,"baseAgi":24,"baseInt":23,"strGain":2.2,"agiGain":3.4,"intGain":1.9,"moveSpeed":325,"armor":2,"attackRange":330,"winRate":50.0,"totalPicks":191613},{"id":77,"name":"Lycan","npcName":"npc_dota_hero_lycan","attr":"str","attack":"Melee","roles":["Carry","Pusher","Durable","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/lycan.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/lycan.png?","baseStr":28,"baseAgi":18,"baseInt":23,"strGain":3.4,"agiGain":1.7,"intGain":1.7,"moveSpeed":305,"armor":0,"attackRange":150,"winRate":49.7,"totalPicks":44431},{"id":97,"name":"Magnus","npcName":"npc_dota_hero_magnataur","attr":"all","attack":"Melee","roles":["Initiator","Disabler","Nuker","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/magnataur.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/magnataur.png?","baseStr":23,"baseAgi":12,"baseInt":20,"strGain":3.1,"agiGain":2,"intGain":2.1,"moveSpeed":305,"armor":1,"attackRange":200,"winRate":49.3,"totalPicks":303934},{"id":136,"name":"Marci","npcName":"npc_dota_hero_marci","attr":"all","attack":"Melee","roles":["Support","Carry","Initiator","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/marci.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/marci.png?","baseStr":23,"baseAgi":20,"baseInt":19,"strGain":3,"agiGain":2.2,"intGain":1.9,"moveSpeed":315,"armor":0,"attackRange":150,"winRate":49.6,"totalPicks":149702},{"id":129,"name":"Mars","npcName":"npc_dota_hero_mars","attr":"str","attack":"Melee","roles":["Carry","Initiator","Disabler","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/mars.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/mars.png?","baseStr":23,"baseAgi":20,"baseInt":21,"strGain":3.7,"agiGain":1.7,"intGain":2.2,"moveSpeed":310,"armor":-1,"attackRange":250,"winRate":46.9,"totalPicks":250700},{"id":94,"name":"Medusa","npcName":"npc_dota_hero_medusa","attr":"agi","attack":"Ranged","roles":["Carry","Disabler","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/medusa.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/medusa.png?","baseStr":0,"baseAgi":22,"baseInt":25,"strGain":0,"agiGain":3.6,"intGain":3.6,"moveSpeed":275,"armor":-1,"attackRange":600,"winRate":50.2,"totalPicks":133965},{"id":82,"name":"Meepo","npcName":"npc_dota_hero_meepo","attr":"agi","attack":"Melee","roles":["Carry","Escape","Nuker","Disabler","Initiator","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/meepo.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/meepo.png?","baseStr":24,"baseAgi":17,"baseInt":18,"strGain":2.2,"agiGain":2.1,"intGain":1.9,"moveSpeed":320,"armor":3,"attackRange":150,"winRate":52.4,"totalPicks":58705},{"id":9,"name":"Mirana","npcName":"npc_dota_hero_mirana","attr":"agi","attack":"Ranged","roles":["Carry","Support","Escape","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/mirana.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/mirana.png?","baseStr":20,"baseAgi":26,"baseInt":22,"strGain":2.2,"agiGain":3.1,"intGain":1.9,"moveSpeed":285,"armor":-2,"attackRange":630,"winRate":51.5,"totalPicks":188100},{"id":114,"name":"Monkey King","npcName":"npc_dota_hero_monkey_king","attr":"agi","attack":"Melee","roles":["Carry","Escape","Disabler","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/monkey_king.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/monkey_king.png?","baseStr":19,"baseAgi":24,"baseInt":20,"strGain":2.8,"agiGain":3.7,"intGain":1.8,"moveSpeed":300,"armor":1,"attackRange":300,"winRate":44.7,"totalPicks":143592},{"id":10,"name":"Morphling","npcName":"npc_dota_hero_morphling","attr":"agi","attack":"Ranged","roles":["Carry","Escape","Durable","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/morphling.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/morphling.png?","baseStr":23,"baseAgi":24,"baseInt":19,"strGain":2.6,"agiGain":3.9,"intGain":1.8,"moveSpeed":285,"armor":-2,"attackRange":350,"winRate":47.7,"totalPicks":169993},{"id":138,"name":"Muerta","npcName":"npc_dota_hero_muerta","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/muerta.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/muerta.png?","baseStr":19,"baseAgi":21,"baseInt":23,"strGain":2,"agiGain":2.7,"intGain":3.6,"moveSpeed":295,"armor":0,"attackRange":575,"winRate":48.0,"totalPicks":139885},{"id":89,"name":"Naga Siren","npcName":"npc_dota_hero_naga_siren","attr":"agi","attack":"Melee","roles":["Carry","Support","Pusher","Disabler","Initiator","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/naga_siren.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/naga_siren.png?","baseStr":21,"baseAgi":22,"baseInt":19,"strGain":2.4,"agiGain":3.4,"intGain":2,"moveSpeed":330,"armor":1,"attackRange":150,"winRate":49.9,"totalPicks":45212},{"id":53,"name":"Nature's Prophet","npcName":"npc_dota_hero_furion","attr":"all","attack":"Ranged","roles":["Carry","Pusher","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/furion.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/furion.png?","baseStr":19,"baseAgi":14,"baseInt":22,"strGain":2.6,"agiGain":2.6,"intGain":3.5,"moveSpeed":295,"armor":0,"attackRange":600,"winRate":43.6,"totalPicks":240507},{"id":36,"name":"Necrophos","npcName":"npc_dota_hero_necrolyte","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Durable","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/necrolyte.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/necrolyte.png?","baseStr":18,"baseAgi":12,"baseInt":23,"strGain":2.3,"agiGain":1.3,"intGain":2.7,"moveSpeed":280,"armor":2,"attackRange":500,"winRate":51.3,"totalPicks":376912},{"id":60,"name":"Night Stalker","npcName":"npc_dota_hero_night_stalker","attr":"str","attack":"Melee","roles":["Carry","Initiator","Durable","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/night_stalker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/night_stalker.png?","baseStr":23,"baseAgi":18,"baseInt":15,"strGain":3,"agiGain":2.2,"intGain":1.6,"moveSpeed":295,"armor":2,"attackRange":150,"winRate":50.5,"totalPicks":113872},{"id":88,"name":"Nyx Assassin","npcName":"npc_dota_hero_nyx_assassin","attr":"all","attack":"Melee","roles":["Disabler","Nuker","Initiator","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/nyx_assassin.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/nyx_assassin.png?","baseStr":17,"baseAgi":18,"baseInt":21,"strGain":2.7,"agiGain":2.9,"intGain":2.6,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":52.4,"totalPicks":193244},{"id":84,"name":"Ogre Magi","npcName":"npc_dota_hero_ogre_magi","attr":"str","attack":"Melee","roles":["Support","Nuker","Disabler","Durable","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/ogre_magi.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/ogre_magi.png?","baseStr":25,"baseAgi":14,"baseInt":0,"strGain":4.2,"agiGain":1.5,"intGain":0,"moveSpeed":290,"armor":4,"attackRange":150,"winRate":50.9,"totalPicks":477919},{"id":57,"name":"Omniknight","npcName":"npc_dota_hero_omniknight","attr":"str","attack":"Melee","roles":["Support","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/omniknight.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/omniknight.png?","baseStr":22,"baseAgi":15,"baseInt":16,"strGain":3.1,"agiGain":2,"intGain":2.1,"moveSpeed":310,"armor":3,"attackRange":150,"winRate":52.7,"totalPicks":137727},{"id":111,"name":"Oracle","npcName":"npc_dota_hero_oracle","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/oracle.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/oracle.png?","baseStr":20,"baseAgi":15,"baseInt":26,"strGain":2.2,"agiGain":1.7,"intGain":3.6,"moveSpeed":295,"armor":1,"attackRange":625,"winRate":49.4,"totalPicks":89314},{"id":76,"name":"Outworld Devourer","npcName":"npc_dota_hero_obsidian_destroyer","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/obsidian_destroyer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/obsidian_destroyer.png?","baseStr":21,"baseAgi":22,"baseInt":30,"strGain":2.9,"agiGain":1.6,"intGain":4.2,"moveSpeed":315,"armor":1,"attackRange":450,"winRate":51.8,"totalPicks":167231},{"id":120,"name":"Pangolier","npcName":"npc_dota_hero_pangolier","attr":"all","attack":"Melee","roles":["Carry","Nuker","Disabler","Durable","Escape","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pangolier.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/pangolier.png?","baseStr":19,"baseAgi":18,"baseInt":16,"strGain":2.7,"agiGain":3.2,"intGain":2.2,"moveSpeed":295,"armor":2,"attackRange":150,"winRate":46.9,"totalPicks":35752},{"id":44,"name":"Phantom Assassin","npcName":"npc_dota_hero_phantom_assassin","attr":"agi","attack":"Melee","roles":["Carry","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/phantom_assassin.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/phantom_assassin.png?","baseStr":19,"baseAgi":21,"baseInt":15,"strGain":2,"agiGain":3.4,"intGain":1.7,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":48.5,"totalPicks":363988},{"id":12,"name":"Phantom Lancer","npcName":"npc_dota_hero_phantom_lancer","attr":"agi","attack":"Melee","roles":["Carry","Escape","Pusher","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/phantom_lancer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/phantom_lancer.png?","baseStr":21,"baseAgi":26,"baseInt":21,"strGain":2.2,"agiGain":3.4,"intGain":1.8,"moveSpeed":285,"armor":0,"attackRange":225,"winRate":52.0,"totalPicks":211970},{"id":110,"name":"Phoenix","npcName":"npc_dota_hero_phoenix","attr":"str","attack":"Ranged","roles":["Support","Nuker","Initiator","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/phoenix.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/phoenix.png?","baseStr":23,"baseAgi":12,"baseInt":16,"strGain":3.3,"agiGain":1.5,"intGain":1.8,"moveSpeed":280,"armor":-1,"attackRange":525,"winRate":51.0,"totalPicks":139816},{"id":137,"name":"Primal Beast","npcName":"npc_dota_hero_primal_beast","attr":"str","attack":"Melee","roles":["Initiator","Durable","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/primal_beast.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/primal_beast.png?","baseStr":26,"baseAgi":15,"baseInt":16,"strGain":4.3,"agiGain":1,"intGain":1.7,"moveSpeed":305,"armor":2,"attackRange":150,"winRate":48.3,"totalPicks":119152},{"id":13,"name":"Puck","npcName":"npc_dota_hero_puck","attr":"int","attack":"Ranged","roles":["Initiator","Disabler","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/puck.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/puck.png?","baseStr":17,"baseAgi":14,"baseInt":23,"strGain":2.4,"agiGain":2.3,"intGain":3.8,"moveSpeed":290,"armor":0,"attackRange":550,"winRate":48.4,"totalPicks":171901},{"id":14,"name":"Pudge","npcName":"npc_dota_hero_pudge","attr":"str","attack":"Melee","roles":["Disabler","Initiator","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pudge.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/pudge.png?","baseStr":25,"baseAgi":11,"baseInt":16,"strGain":3,"agiGain":1.4,"intGain":1.8,"moveSpeed":280,"armor":0,"attackRange":175,"winRate":51.7,"totalPicks":748517},{"id":45,"name":"Pugna","npcName":"npc_dota_hero_pugna","attr":"int","attack":"Ranged","roles":["Nuker","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/pugna.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/pugna.png?","baseStr":19,"baseAgi":21,"baseInt":26,"strGain":2,"agiGain":1.3,"intGain":5.2,"moveSpeed":330,"armor":0,"attackRange":630,"winRate":48.7,"totalPicks":117629},{"id":39,"name":"Queen of Pain","npcName":"npc_dota_hero_queenofpain","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/queenofpain.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/queenofpain.png?","baseStr":20,"baseAgi":22,"baseInt":25,"strGain":2.4,"agiGain":2.5,"intGain":3.4,"moveSpeed":290,"armor":0,"attackRange":550,"winRate":48.8,"totalPicks":406307},{"id":15,"name":"Razor","npcName":"npc_dota_hero_razor","attr":"agi","attack":"Ranged","roles":["Carry","Durable","Nuker","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/razor.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/razor.png?","baseStr":22,"baseAgi":24,"baseInt":21,"strGain":2.8,"agiGain":2.8,"intGain":2.2,"moveSpeed":280,"armor":0,"attackRange":475,"winRate":53.9,"totalPicks":451544},{"id":32,"name":"Riki","npcName":"npc_dota_hero_riki","attr":"agi","attack":"Melee","roles":["Carry","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/riki.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/riki.png?","baseStr":18,"baseAgi":30,"baseInt":14,"strGain":2,"agiGain":2.4,"intGain":1.3,"moveSpeed":315,"armor":0,"attackRange":150,"winRate":51.8,"totalPicks":149878},{"id":131,"name":"Ring Master","npcName":"npc_dota_hero_ringmaster","attr":"int","attack":"Ranged","roles":["Support","Nuker","Escape","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/ringmaster.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/ringmaster.png?","baseStr":21,"baseAgi":13,"baseInt":25,"strGain":2.1,"agiGain":1.4,"intGain":3,"moveSpeed":310,"armor":1,"attackRange":575,"winRate":48.0,"totalPicks":103535},{"id":86,"name":"Rubick","npcName":"npc_dota_hero_rubick","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/rubick.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/rubick.png?","baseStr":21,"baseAgi":23,"baseInt":24,"strGain":2,"agiGain":2.5,"intGain":3.7,"moveSpeed":290,"armor":1,"attackRange":550,"winRate":48.2,"totalPicks":498814},{"id":16,"name":"Sand King","npcName":"npc_dota_hero_sand_king","attr":"all","attack":"Melee","roles":["Initiator","Disabler","Support","Nuker","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/sand_king.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/sand_king.png?","baseStr":23,"baseAgi":19,"baseInt":17,"strGain":2.3,"agiGain":2,"intGain":2,"moveSpeed":290,"armor":1,"attackRange":150,"winRate":51.0,"totalPicks":147161},{"id":79,"name":"Shadow Demon","npcName":"npc_dota_hero_shadow_demon","attr":"int","attack":"Ranged","roles":["Support","Disabler","Initiator","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/shadow_demon.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/shadow_demon.png?","baseStr":23,"baseAgi":18,"baseInt":22,"strGain":2.6,"agiGain":2.2,"intGain":3.6,"moveSpeed":290,"armor":0,"attackRange":500,"winRate":47.5,"totalPicks":87895},{"id":11,"name":"Shadow Fiend","npcName":"npc_dota_hero_nevermore","attr":"agi","attack":"Ranged","roles":["Carry","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/nevermore.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/nevermore.png?","baseStr":19,"baseAgi":25,"baseInt":18,"strGain":2.7,"agiGain":3.6,"intGain":2.2,"moveSpeed":305,"armor":0,"attackRange":525,"winRate":50.4,"totalPicks":570859},{"id":27,"name":"Shadow Shaman","npcName":"npc_dota_hero_shadow_shaman","attr":"int","attack":"Ranged","roles":["Support","Pusher","Disabler","Nuker","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/shadow_shaman.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/shadow_shaman.png?","baseStr":20,"baseAgi":16,"baseInt":23,"strGain":2.3,"agiGain":1.6,"intGain":3.5,"moveSpeed":285,"armor":2,"attackRange":400,"winRate":51.7,"totalPicks":460325},{"id":75,"name":"Silencer","npcName":"npc_dota_hero_silencer","attr":"int","attack":"Ranged","roles":["Carry","Support","Disabler","Initiator","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/silencer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/silencer.png?","baseStr":18,"baseAgi":22,"baseInt":25,"strGain":2.2,"agiGain":2.2,"intGain":2.9,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":48.3,"totalPicks":293857},{"id":101,"name":"Skywrath Mage","npcName":"npc_dota_hero_skywrath_mage","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/skywrath_mage.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/skywrath_mage.png?","baseStr":21,"baseAgi":13,"baseInt":25,"strGain":2,"agiGain":0.8,"intGain":4.1,"moveSpeed":325,"armor":-2,"attackRange":625,"winRate":51.3,"totalPicks":414800},{"id":28,"name":"Slardar","npcName":"npc_dota_hero_slardar","attr":"str","attack":"Melee","roles":["Carry","Durable","Initiator","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/slardar.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/slardar.png?","baseStr":21,"baseAgi":17,"baseInt":15,"strGain":3.6,"agiGain":2.1,"intGain":1.5,"moveSpeed":300,"armor":2,"attackRange":150,"winRate":50.6,"totalPicks":242779},{"id":93,"name":"Slark","npcName":"npc_dota_hero_slark","attr":"agi","attack":"Melee","roles":["Carry","Escape","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/slark.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/slark.png?","baseStr":20,"baseAgi":21,"baseInt":16,"strGain":2.1,"agiGain":1.5,"intGain":1.9,"moveSpeed":300,"armor":0,"attackRange":150,"winRate":50.9,"totalPicks":428381},{"id":128,"name":"Snapfire","npcName":"npc_dota_hero_snapfire","attr":"all","attack":"Ranged","roles":["Support","Nuker","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/snapfire.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/snapfire.png?","baseStr":21,"baseAgi":16,"baseInt":21,"strGain":3.5,"agiGain":1.9,"intGain":2.2,"moveSpeed":300,"armor":1,"attackRange":400,"winRate":47.8,"totalPicks":188133},{"id":35,"name":"Sniper","npcName":"npc_dota_hero_sniper","attr":"agi","attack":"Ranged","roles":["Carry","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/sniper.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/sniper.png?","baseStr":19,"baseAgi":27,"baseInt":15,"strGain":2,"agiGain":3.2,"intGain":2.6,"moveSpeed":285,"armor":0,"attackRange":550,"winRate":47.6,"totalPicks":564914},{"id":67,"name":"Spectre","npcName":"npc_dota_hero_spectre","attr":"agi","attack":"Melee","roles":["Carry","Durable","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/spectre.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/spectre.png?","baseStr":21,"baseAgi":25,"baseInt":16,"strGain":2.5,"agiGain":2.1,"intGain":1.7,"moveSpeed":290,"armor":0,"attackRange":150,"winRate":53.6,"totalPicks":203205},{"id":71,"name":"Spirit Breaker","npcName":"npc_dota_hero_spirit_breaker","attr":"str","attack":"Melee","roles":["Carry","Initiator","Disabler","Durable","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/spirit_breaker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/spirit_breaker.png?","baseStr":28,"baseAgi":17,"baseInt":14,"strGain":3.3,"agiGain":1.7,"intGain":1.8,"moveSpeed":295,"armor":1,"attackRange":170,"winRate":51.2,"totalPicks":342390},{"id":17,"name":"Storm Spirit","npcName":"npc_dota_hero_storm_spirit","attr":"int","attack":"Ranged","roles":["Carry","Escape","Nuker","Initiator","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/storm_spirit.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/storm_spirit.png?","baseStr":21,"baseAgi":22,"baseInt":23,"strGain":2,"agiGain":2.6,"intGain":3.7,"moveSpeed":285,"armor":1,"attackRange":480,"winRate":48.5,"totalPicks":234176},{"id":18,"name":"Sven","npcName":"npc_dota_hero_sven","attr":"str","attack":"Melee","roles":["Carry","Disabler","Initiator","Durable","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/sven.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/sven.png?","baseStr":23,"baseAgi":18,"baseInt":16,"strGain":3.5,"agiGain":2.2,"intGain":1.5,"moveSpeed":325,"armor":0,"attackRange":150,"winRate":48.9,"totalPicks":159847},{"id":105,"name":"Techies","npcName":"npc_dota_hero_techies","attr":"all","attack":"Ranged","roles":["Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/techies.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/techies.png?","baseStr":19,"baseAgi":16,"baseInt":25,"strGain":2.6,"agiGain":1.8,"intGain":3,"moveSpeed":310,"armor":2,"attackRange":600,"winRate":48.4,"totalPicks":309283},{"id":46,"name":"Templar Assassin","npcName":"npc_dota_hero_templar_assassin","attr":"agi","attack":"Ranged","roles":["Carry","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/templar_assassin.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/templar_assassin.png?","baseStr":21,"baseAgi":23,"baseInt":20,"strGain":2.4,"agiGain":3.4,"intGain":2,"moveSpeed":310,"armor":0,"attackRange":250,"winRate":48.2,"totalPicks":169667},{"id":109,"name":"Terrorblade","npcName":"npc_dota_hero_terrorblade","attr":"agi","attack":"Melee","roles":["Carry","Pusher","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/terrorblade.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/terrorblade.png?","baseStr":18,"baseAgi":22,"baseInt":19,"strGain":2,"agiGain":4,"intGain":1.6,"moveSpeed":315,"armor":5,"attackRange":150,"winRate":45.0,"totalPicks":65638},{"id":29,"name":"Tidehunter","npcName":"npc_dota_hero_tidehunter","attr":"str","attack":"Melee","roles":["Initiator","Durable","Disabler","Nuker","Carry"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/tidehunter.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/tidehunter.png?","baseStr":27,"baseAgi":15,"baseInt":20,"strGain":3.6,"agiGain":1.5,"intGain":1.7,"moveSpeed":300,"armor":0,"attackRange":150,"winRate":49.5,"totalPicks":201276},{"id":98,"name":"Timbersaw","npcName":"npc_dota_hero_shredder","attr":"str","attack":"Melee","roles":["Nuker","Durable","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/shredder.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/shredder.png?","baseStr":26,"baseAgi":16,"baseInt":23,"strGain":3.5,"agiGain":1.6,"intGain":2.7,"moveSpeed":280,"armor":0,"attackRange":150,"winRate":45.8,"totalPicks":135125},{"id":34,"name":"Tinker","npcName":"npc_dota_hero_tinker","attr":"int","attack":"Ranged","roles":["Carry","Nuker","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/tinker.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/tinker.png?","baseStr":19,"baseAgi":17,"baseInt":30,"strGain":2.3,"agiGain":1.4,"intGain":3.3,"moveSpeed":310,"armor":2,"attackRange":500,"winRate":48.7,"totalPicks":182464},{"id":19,"name":"Tiny","npcName":"npc_dota_hero_tiny","attr":"str","attack":"Melee","roles":["Carry","Nuker","Pusher","Initiator","Durable","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/tiny.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/tiny.png?","baseStr":30,"baseAgi":0,"baseInt":17,"strGain":4.2,"agiGain":0,"intGain":2.2,"moveSpeed":275,"armor":0,"attackRange":150,"winRate":47.1,"totalPicks":245382},{"id":83,"name":"Treant Protector","npcName":"npc_dota_hero_treant","attr":"str","attack":"Melee","roles":["Support","Initiator","Durable","Disabler","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/treant.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/treant.png?","baseStr":25,"baseAgi":15,"baseInt":20,"strGain":3.4,"agiGain":1.8,"intGain":1.8,"moveSpeed":280,"armor":0,"attackRange":150,"winRate":50.4,"totalPicks":135142},{"id":95,"name":"Troll Warlord","npcName":"npc_dota_hero_troll_warlord","attr":"agi","attack":"Ranged","roles":["Carry","Pusher","Disabler","Durable"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/troll_warlord.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/troll_warlord.png?","baseStr":21,"baseAgi":23,"baseInt":13,"strGain":2.5,"agiGain":3.3,"intGain":1,"moveSpeed":290,"armor":-1,"attackRange":500,"winRate":50.1,"totalPicks":85357},{"id":100,"name":"Tusk","npcName":"npc_dota_hero_tusk","attr":"str","attack":"Melee","roles":["Initiator","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/tusk.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/tusk.png?","baseStr":23,"baseAgi":23,"baseInt":18,"strGain":3.9,"agiGain":1.9,"intGain":1.7,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":48.4,"totalPicks":180072},{"id":108,"name":"Underlord","npcName":"npc_dota_hero_abyssal_underlord","attr":"str","attack":"Melee","roles":["Support","Nuker","Disabler","Durable","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/abyssal_underlord.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/abyssal_underlord.png?","baseStr":25,"baseAgi":12,"baseInt":18,"strGain":3.2,"agiGain":1.6,"intGain":2.3,"moveSpeed":290,"armor":3,"attackRange":200,"winRate":50.5,"totalPicks":220887},{"id":85,"name":"Undying","npcName":"npc_dota_hero_undying","attr":"str","attack":"Melee","roles":["Support","Durable","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/undying.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/undying.png?","baseStr":22,"baseAgi":10,"baseInt":27,"strGain":2.4,"agiGain":1.2,"intGain":2.8,"moveSpeed":300,"armor":1,"attackRange":150,"winRate":51.6,"totalPicks":249687},{"id":70,"name":"Ursa","npcName":"npc_dota_hero_ursa","attr":"agi","attack":"Melee","roles":["Carry","Durable","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/ursa.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/ursa.png?","baseStr":25,"baseAgi":18,"baseInt":16,"strGain":2.4,"agiGain":2.8,"intGain":1.5,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":48.5,"totalPicks":273238},{"id":20,"name":"Vengeful Spirit","npcName":"npc_dota_hero_vengefulspirit","attr":"agi","attack":"Ranged","roles":["Support","Initiator","Disabler","Nuker","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/vengefulspirit.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/vengefulspirit.png?","baseStr":20,"baseAgi":23,"baseInt":19,"strGain":2.6,"agiGain":3,"intGain":1.5,"moveSpeed":295,"armor":0,"attackRange":400,"winRate":52.8,"totalPicks":187147},{"id":40,"name":"Venomancer","npcName":"npc_dota_hero_venomancer","attr":"all","attack":"Ranged","roles":["Support","Nuker","Initiator","Pusher","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/venomancer.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/venomancer.png?","baseStr":19,"baseAgi":25,"baseInt":19,"strGain":2.1,"agiGain":2.8,"intGain":1.8,"moveSpeed":280,"armor":0,"attackRange":450,"winRate":51.2,"totalPicks":321143},{"id":47,"name":"Viper","npcName":"npc_dota_hero_viper","attr":"agi","attack":"Ranged","roles":["Carry","Durable","Initiator","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/viper.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/viper.png?","baseStr":21,"baseAgi":21,"baseInt":17,"strGain":2.4,"agiGain":2.7,"intGain":2,"moveSpeed":275,"armor":-2,"attackRange":575,"winRate":48.7,"totalPicks":274235},{"id":92,"name":"Visage","npcName":"npc_dota_hero_visage","attr":"all","attack":"Ranged","roles":["Support","Nuker","Durable","Disabler","Pusher"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/visage.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/visage.png?","baseStr":22,"baseAgi":11,"baseInt":22,"strGain":2.8,"agiGain":1.3,"intGain":2.9,"moveSpeed":285,"armor":0,"attackRange":600,"winRate":52.0,"totalPicks":53639},{"id":126,"name":"Void Spirit","npcName":"npc_dota_hero_void_spirit","attr":"all","attack":"Melee","roles":["Carry","Escape","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/void_spirit.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/void_spirit.png?","baseStr":22,"baseAgi":21,"baseInt":24,"strGain":2.6,"agiGain":2.2,"intGain":3.1,"moveSpeed":290,"armor":-1,"attackRange":200,"winRate":50.9,"totalPicks":158084},{"id":37,"name":"Warlock","npcName":"npc_dota_hero_warlock","attr":"int","attack":"Ranged","roles":["Support","Initiator","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/warlock.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/warlock.png?","baseStr":22,"baseAgi":10,"baseInt":25,"strGain":2.4,"agiGain":1,"intGain":3.1,"moveSpeed":300,"armor":1,"attackRange":600,"winRate":50.3,"totalPicks":265058},{"id":63,"name":"Weaver","npcName":"npc_dota_hero_weaver","attr":"agi","attack":"Ranged","roles":["Carry","Escape"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/weaver.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/weaver.png?","baseStr":16,"baseAgi":17,"baseInt":20,"strGain":2,"agiGain":3.3,"intGain":2,"moveSpeed":275,"armor":1,"attackRange":425,"winRate":50.0,"totalPicks":366936},{"id":21,"name":"Windranger","npcName":"npc_dota_hero_windrunner","attr":"all","attack":"Ranged","roles":["Carry","Support","Disabler","Escape","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/windrunner.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/windrunner.png?","baseStr":18,"baseAgi":17,"baseInt":18,"strGain":2.6,"agiGain":2.1,"intGain":3.2,"moveSpeed":290,"armor":0,"attackRange":600,"winRate":48.6,"totalPicks":521734},{"id":112,"name":"Winter Wyvern","npcName":"npc_dota_hero_winter_wyvern","attr":"int","attack":"Ranged","roles":["Support","Disabler","Nuker"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/winter_wyvern.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/winter_wyvern.png?","baseStr":22,"baseAgi":16,"baseInt":26,"strGain":2.5,"agiGain":1.7,"intGain":3.6,"moveSpeed":285,"armor":1,"attackRange":450,"winRate":52.3,"totalPicks":113398},{"id":30,"name":"Witch Doctor","npcName":"npc_dota_hero_witch_doctor","attr":"int","attack":"Ranged","roles":["Support","Nuker","Disabler"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/witch_doctor.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/witch_doctor.png?","baseStr":20,"baseAgi":13,"baseInt":22,"strGain":2.1,"agiGain":1.4,"intGain":3.1,"moveSpeed":300,"armor":0,"attackRange":550,"winRate":52.3,"totalPicks":528551},{"id":42,"name":"Wraith King","npcName":"npc_dota_hero_skeleton_king","attr":"str","attack":"Melee","roles":["Carry","Support","Durable","Disabler","Initiator"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/skeleton_king.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/skeleton_king.png?","baseStr":22,"baseAgi":16,"baseInt":16,"strGain":2.8,"agiGain":1.7,"intGain":1.6,"moveSpeed":310,"armor":1,"attackRange":150,"winRate":53.6,"totalPicks":289504},{"id":22,"name":"Zeus","npcName":"npc_dota_hero_zuus","attr":"int","attack":"Ranged","roles":["Nuker","Carry"],"img":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/zuus.png?","icon":"https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/icons/zuus.png?","baseStr":19,"baseAgi":11,"baseInt":23,"strGain":2.1,"agiGain":1.2,"intGain":3.3,"moveSpeed":315,"armor":2,"attackRange":380,"winRate":49.6,"totalPicks":360855}];
+const PLAYER_HEROES = [{"id":47,"g":316,"w":163,"lp":1772146168},{"id":36,"g":282,"w":154,"lp":1772138788},{"id":53,"g":231,"w":102,"lp":1767608254},{"id":113,"g":189,"w":84,"lp":1725620978},{"id":85,"g":186,"w":104,"lp":1772085291},{"id":5,"g":124,"w":52,"lp":1745959744},{"id":106,"g":114,"w":54,"lp":1771691014},{"id":22,"g":107,"w":53,"lp":1768530578},{"id":59,"g":100,"w":45,"lp":1769213998},{"id":2,"g":87,"w":37,"lp":1772244583},{"id":80,"g":72,"w":29,"lp":1770531594},{"id":6,"g":71,"w":38,"lp":1771680959},{"id":99,"g":71,"w":34,"lp":1769750362},{"id":4,"g":68,"w":31,"lp":1769583486},{"id":42,"g":65,"w":35,"lp":1771061414},{"id":98,"g":61,"w":29,"lp":1767881834},{"id":37,"g":57,"w":34,"lp":1771648514},{"id":26,"g":56,"w":19,"lp":1772078571},{"id":31,"g":52,"w":29,"lp":1766108313},{"id":35,"g":52,"w":24,"lp":1724186288},{"id":104,"g":50,"w":22,"lp":1768635579},{"id":92,"g":45,"w":26,"lp":1767660229},{"id":28,"g":43,"w":20,"lp":1772260423},{"id":145,"g":43,"w":17,"lp":1767591299},{"id":82,"g":42,"w":11,"lp":1724468300},{"id":102,"g":41,"w":22,"lp":1771455387},{"id":20,"g":36,"w":15,"lp":1715609671},{"id":136,"g":34,"w":10,"lp":1772095787},{"id":94,"g":33,"w":20,"lp":1772131418},{"id":30,"g":31,"w":18,"lp":1765067087},{"id":12,"g":29,"w":16,"lp":1771673789},{"id":76,"g":29,"w":10,"lp":1732085259},{"id":126,"g":25,"w":10,"lp":1769733451},{"id":67,"g":23,"w":16,"lp":1772153018},{"id":40,"g":21,"w":10,"lp":1772242388},{"id":114,"g":20,"w":9,"lp":1772087916},{"id":3,"g":19,"w":9,"lp":1544174410},{"id":34,"g":18,"w":6,"lp":1717107744},{"id":17,"g":17,"w":6,"lp":1724208708},{"id":61,"g":16,"w":5,"lp":1735679569},{"id":95,"g":16,"w":7,"lp":1746416138},{"id":52,"g":15,"w":6,"lp":1722029895},{"id":68,"g":15,"w":7,"lp":1717087212},{"id":81,"g":13,"w":6,"lp":1769362615},{"id":121,"g":13,"w":8,"lp":1772248203},{"id":44,"g":12,"w":2,"lp":1735244054},{"id":84,"g":12,"w":5,"lp":1716604580},{"id":8,"g":11,"w":4,"lp":1765512538},{"id":16,"g":11,"w":6,"lp":1717638934},{"id":63,"g":11,"w":6,"lp":1409054847},{"id":83,"g":11,"w":4,"lp":1698612642},{"id":15,"g":10,"w":6,"lp":1771723139},{"id":70,"g":10,"w":5,"lp":1764355030},{"id":71,"g":10,"w":3,"lp":1714230686},{"id":9,"g":9,"w":5,"lp":1715601252},{"id":56,"g":9,"w":4,"lp":1713060942},{"id":128,"g":9,"w":4,"lp":1716030434},{"id":27,"g":8,"w":3,"lp":1720616063},{"id":43,"g":8,"w":5,"lp":1703820894},{"id":25,"g":7,"w":2,"lp":1726618756},{"id":110,"g":7,"w":2,"lp":1752019927},{"id":21,"g":6,"w":2,"lp":1717010594},{"id":58,"g":6,"w":1,"lp":1701519987},{"id":77,"g":6,"w":2,"lp":1722646132},{"id":123,"g":6,"w":1,"lp":1734547098},{"id":13,"g":5,"w":1,"lp":1405506850},{"id":55,"g":5,"w":4,"lp":1703840818},{"id":64,"g":5,"w":2,"lp":1709365395},{"id":69,"g":5,"w":2,"lp":1702199062},{"id":101,"g":5,"w":2,"lp":1407592328},{"id":111,"g":5,"w":1,"lp":1714838837},{"id":33,"g":4,"w":0,"lp":1709786011},{"id":39,"g":4,"w":2,"lp":1405458051},{"id":50,"g":4,"w":2,"lp":1702294718},{"id":54,"g":4,"w":0,"lp":1715901058},{"id":1,"g":3,"w":1,"lp":1709231565},{"id":29,"g":3,"w":1,"lp":1767034152},{"id":32,"g":3,"w":1,"lp":1538089143},{"id":45,"g":3,"w":1,"lp":1706566704},{"id":48,"g":3,"w":1,"lp":1395050718},{"id":60,"g":3,"w":2,"lp":1394786155},{"id":62,"g":3,"w":2,"lp":1395682923},{"id":88,"g":3,"w":0,"lp":1406135174},{"id":96,"g":3,"w":1,"lp":1403817917},{"id":11,"g":2,"w":2,"lp":1433950227},{"id":14,"g":2,"w":1,"lp":1395847428},{"id":18,"g":2,"w":2,"lp":1405494896},{"id":23,"g":2,"w":1,"lp":1394892380},{"id":38,"g":2,"w":1,"lp":1395853375},{"id":41,"g":2,"w":0,"lp":1706293454},{"id":51,"g":2,"w":2,"lp":1716672462},{"id":72,"g":2,"w":0,"lp":1704460563},{"id":93,"g":2,"w":1,"lp":1394743421},{"id":100,"g":2,"w":1,"lp":1702803195},{"id":112,"g":2,"w":1,"lp":1726023580},{"id":137,"g":2,"w":0,"lp":1710473855},{"id":7,"g":1,"w":1,"lp":1704505774},{"id":19,"g":1,"w":0,"lp":1395318034},{"id":46,"g":1,"w":0,"lp":1370989088},{"id":49,"g":1,"w":1,"lp":1395675324},{"id":57,"g":1,"w":0,"lp":1697308518},{"id":75,"g":1,"w":1,"lp":1405427170},{"id":86,"g":1,"w":0,"lp":1409153562},{"id":87,"g":1,"w":0,"lp":1544124674},{"id":89,"g":1,"w":0,"lp":1363729107},{"id":90,"g":1,"w":1,"lp":1538691258},{"id":91,"g":1,"w":1,"lp":1394807360},{"id":109,"g":1,"w":0,"lp":1406127439},{"id":119,"g":1,"w":0,"lp":1707771002},{"id":129,"g":1,"w":0,"lp":1697861229},{"id":155,"g":1,"w":0,"lp":1766725867}];
+
+// ====== State ======
+let heroes = HEROES;
+let heroMap = {};
+let playerMap = {};
+let matchupCache = {};
+let activeAttr = null;
+let poolFilterActive = false;
+let pickTeam = 'radiant';
+let teams = { radiant: [], dire: [] };
+let poolTab = 'best';
+
+const API_BASE = location.hostname === 'localhost' || location.protocol === 'file:'
+  ? 'https://api.opendota.com' : '';
+
+// ====== Init ======
+async function init() {
+  heroMap = {};
+  heroes.forEach(h => heroMap[h.id] = h);
+
+  // Build player hero map
+  playerMap = {};
+  PLAYER_HEROES.forEach(ph => {
+    playerMap[ph.id] = { games: ph.g, wins: ph.w, wr: ph.g > 0 ? Math.round(ph.w / ph.g * 1000) / 10 : 0, lastPlayed: ph.lp };
+  });
+
+  // Try live stats
+  try {
+    const res = await fetch(API_BASE + '/api/heroStats');
+    if (res.ok) {
+      const live = await res.json();
+      const liveMap = {};
+      live.forEach(h => {
+        const tp = [1,2,3,4,5,6,7].reduce((s,i) => s + (h[i+'_pick']||0), 0);
+        const tw = [1,2,3,4,5,6,7].reduce((s,i) => s + (h[i+'_win']||0), 0);
+        liveMap[h.id] = { winRate: tp > 0 ? Math.round(tw/tp*1000)/10 : 50, totalPicks: tp };
+      });
+      heroes = heroes.map(h => ({...h, winRate: liveMap[h.id]?.winRate ?? h.winRate, totalPicks: liveMap[h.id]?.totalPicks ?? h.totalPicks}));
+      heroMap = {};
+      heroes.forEach(h => heroMap[h.id] = h);
+    }
+  } catch {}
+
+  renderGrid();
+  renderTeams();
+  renderPool();
+  renderAvoid();
+  document.getElementById('search').addEventListener('input', renderGrid);
+}
+
+// ====== Pool Panel ======
+function setPoolTab(tab) {
+  poolTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  renderPool();
+}
+
+function renderPool() {
+  const el = document.getElementById('pool-list');
+  let poolHeroes = PLAYER_HEROES.filter(ph => ph.g >= 10 && heroMap[ph.id]);
+
+  if (poolTab === 'best') {
+    poolHeroes = poolHeroes.filter(ph => ph.g >= 15).sort((a,b) => (b.w/b.g) - (a.w/a.g));
+  } else if (poolTab === 'most') {
+    poolHeroes.sort((a,b) => b.g - a.g);
+  } else {
+    poolHeroes.sort((a,b) => b.lp - a.lp);
+  }
+
+  const picked = new Set([...teams.radiant, ...teams.dire]);
+  el.innerHTML = poolHeroes.slice(0, 12).map(ph => {
+    const h = heroMap[ph.id];
+    const wr = (ph.w / ph.g * 100).toFixed(1);
+    const wrColor = wr >= 55 ? 'var(--green)' : wr < 45 ? 'var(--red)' : 'var(--text)';
+    const cls = picked.has(ph.id) ? 'pool-item picked' : 'pool-item';
+    return `<div class="${cls}" onclick="heroClick(${ph.id})" oncontextmenu="heroRightClick(event, ${ph.id})">
+      <img src="${h.img}" alt="${h.name}">
+      <span>${h.name}</span>
+      <span class="pool-wr" style="color:${wrColor}">${wr}%</span>
+      <span class="pool-games">${ph.g}g</span>
+    </div>`;
+  }).join('');
+}
+
+function renderAvoid() {
+  const el = document.getElementById('avoid-list');
+  const avoidHeroes = PLAYER_HEROES
+    .filter(ph => ph.g >= 15 && heroMap[ph.id] && (ph.w / ph.g) < 0.42)
+    .sort((a,b) => (a.w/a.g) - (b.w/b.g));
+
+  el.innerHTML = avoidHeroes.slice(0, 8).map(ph => {
+    const h = heroMap[ph.id];
+    const wr = (ph.w / ph.g * 100).toFixed(1);
+    return `<div class="pool-item" oncontextmenu="heroRightClick(event, ${ph.id})">
+      <img src="${h.img}" alt="${h.name}">
+      <span>${h.name}</span>
+      <span class="pool-wr" style="color:var(--red)">${wr}%</span>
+      <span class="pool-games">${ph.g}g</span>
+    </div>`;
+  }).join('');
+}
+
+// ====== Render Hero Grid ======
+function renderGrid() {
+  const query = document.getElementById('search').value.toLowerCase();
+  const grid = document.getElementById('hero-grid');
+  const filtered = heroes.filter(h => {
+    if (query && !h.name.toLowerCase().includes(query)) return false;
+    if (activeAttr && h.attr !== activeAttr) return false;
+    if (poolFilterActive && (!playerMap[h.id] || playerMap[h.id].games < 10)) return false;
+    return true;
+  });
+
+  grid.innerHTML = filtered.map(h => {
+    const pickedR = teams.radiant.includes(h.id);
+    const pickedD = teams.dire.includes(h.id);
+    const cls = pickedR ? 'picked-radiant' : pickedD ? 'picked-dire' : '';
+    const inPool = playerMap[h.id] && playerMap[h.id].games >= 10;
+    const poolCls = inPool && !pickedR && !pickedD ? 'in-pool' : '';
+
+    // Personal WR badge
+    let wrBadge = '';
+    if (playerMap[h.id] && playerMap[h.id].games >= 10) {
+      const wr = playerMap[h.id].wr;
+      const wrCls = wr >= 55 ? 'good' : wr < 45 ? 'bad' : 'neutral';
+      wrBadge = `<div class="personal-wr show ${wrCls}">${wr}%</div>`;
+    }
+
+    return `<div class="hero-card ${cls} ${poolCls}" data-id="${h.id}"
+      onclick="heroClick(${h.id})" oncontextmenu="heroRightClick(event, ${h.id})">
+      <img src="${h.img}" alt="${h.name}" loading="lazy">
+      <div class="overlay">${h.name}</div>
+      ${wrBadge}
+      <div class="adv-badge" id="adv-${h.id}"></div>
+    </div>`;
+  }).join('');
+
+  updateAdvBadges();
+}
+
+// ====== Pool filter ======
+function togglePoolFilter() {
+  poolFilterActive = !poolFilterActive;
+  document.getElementById('pool-filter-btn').classList.toggle('active', poolFilterActive);
+  renderGrid();
+}
+
+// ====== Hero Click / Right-click ======
+function heroClick(id) {
+  if (teams.radiant.includes(id) || teams.dire.includes(id)) return;
+  if (teams[pickTeam].length >= 5) return;
+  teams[pickTeam].push(id);
+  renderGrid();
+  renderTeams();
+  renderPool();
+  fetchMatchups();
+}
+function heroRightClick(e, id) { e.preventDefault(); showHeroDetail(id); }
+
+// ====== Team rendering ======
+function renderTeams() {
+  ['radiant', 'dire'].forEach(team => {
+    const container = document.getElementById(team + '-slots');
+    let html = '';
+    for (let i = 0; i < 5; i++) {
+      if (teams[team][i]) {
+        const h = heroMap[teams[team][i]];
+        const ph = playerMap[h.id];
+        const wrText = ph && ph.games >= 5 ? `Your: ${ph.wr}% (${ph.games}g)` : `Global: ${h.winRate}%`;
+        html += `<div class="team-slot">
+          <img src="${h.img}" alt="${h.name}">
+          <div>
+            <div class="hero-name">${h.name}</div>
+            <div class="hero-wr">${wrText}</div>
+          </div>
+          <button class="remove-btn" onclick="removeHero('${team}', ${i})">&times;</button>
+        </div>`;
+      } else {
+        html += `<div class="team-slot"><span class="empty-slot">Pick ${i+1}</span></div>`;
+      }
+    }
+    container.innerHTML = html;
+  });
+}
+
+function removeHero(team, idx) { teams[team].splice(idx, 1); renderGrid(); renderTeams(); renderPool(); fetchMatchups(); }
+function clearTeam(team) { teams[team] = []; renderGrid(); renderTeams(); renderPool(); fetchMatchups(); }
+
+// ====== Filters ======
+function toggleAttr(btn) {
+  const attr = btn.dataset.attr;
+  if (activeAttr === attr) { activeAttr = null; btn.classList.remove('active'); }
+  else { document.querySelectorAll('.filter-btn[data-attr]').forEach(b => b.classList.remove('active')); activeAttr = attr; btn.classList.add('active'); }
+  renderGrid();
+}
+function setPickTeam(team) {
+  pickTeam = team;
+  document.getElementById('pick-radiant').classList.toggle('active', team === 'radiant');
+  document.getElementById('pick-dire').classList.toggle('active', team === 'dire');
+  updateAdvBadges();
+}
+
+// ====== Matchup data ======
+async function getMatchups(heroId) {
+  if (matchupCache[heroId]) return matchupCache[heroId];
+  try {
+    const res = await fetch(`${API_BASE}/api/heroes/${heroId}/matchups`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    matchupCache[heroId] = data;
+    return data;
+  } catch { return []; }
+}
+
+async function fetchMatchups() {
+  await Promise.all([updateRecommendations('radiant'), updateRecommendations('dire')]);
+  updateAdvBadges();
+}
+
+async function updateRecommendations(team) {
+  const otherTeam = team === 'radiant' ? 'dire' : 'radiant';
+  const enemies = teams[otherTeam];
+  const listEl = document.getElementById(team + '-rec-list');
+
+  if (enemies.length === 0) {
+    listEl.innerHTML = '<div class="loading-text">Pick enemy heroes to see suggestions</div>';
+    return;
+  }
+  listEl.innerHTML = '<div class="loading-text"><span class="spinner"></span> Calculating...</div>';
+
+  const allMatchups = await Promise.all(enemies.map(id => getMatchups(id)));
+  const scores = {};
+  allMatchups.forEach(matchups => {
+    matchups.forEach(m => {
+      if (!scores[m.hero_id]) scores[m.hero_id] = { total: 0, count: 0 };
+      const wr = m.games_played > 50 ? (m.wins / m.games_played - 0.5) * 100 : 0;
+      scores[m.hero_id].total += wr;
+      scores[m.hero_id].count++;
+    });
+  });
+
+  const picked = new Set([...teams.radiant, ...teams.dire]);
+  let ranked = Object.entries(scores)
+    .filter(([id]) => !picked.has(Number(id)) && heroMap[Number(id)])
+    .map(([id, s]) => {
+      const hid = Number(id);
+      const ph = playerMap[hid];
+      // Boost score for heroes in player pool with good WR
+      let boost = 0;
+      if (ph && ph.games >= 15 && ph.wr >= 50) boost = (ph.wr - 50) * 0.3 + (Math.min(ph.games, 100) / 100) * 2;
+      return { id: hid, adv: s.total, boost, score: s.total + boost, inPool: ph && ph.games >= 10 };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  const top = ranked.slice(0, 10);
+  if (top.length === 0) { listEl.innerHTML = '<div class="loading-text">No data available</div>'; return; }
+
+  listEl.innerHTML = top.map(r => {
+    const h = heroMap[r.id];
+    const advStr = r.adv >= 0 ? `+${r.adv.toFixed(1)}%` : `${r.adv.toFixed(1)}%`;
+    const cls = r.adv >= 0 ? 'good' : 'bad';
+    const poolBadge = r.inPool ? '<span class="in-pool">YOU</span>' : '';
+    return `<div class="rec-item" onclick="heroClick(${h.id})" oncontextmenu="heroRightClick(event, ${h.id})">
+      <img src="${h.img}" alt="${h.name}">
+      <span>${h.name}</span>
+      ${poolBadge}
+      <span class="adv ${cls}">${advStr}</span>
+    </div>`;
+  }).join('');
+}
+
+// ====== Advantage badges ======
+function updateAdvBadges() {
+  const otherTeam = pickTeam === 'radiant' ? 'dire' : 'radiant';
+  const enemies = teams[otherTeam];
+  const picked = new Set([...teams.radiant, ...teams.dire]);
+  heroes.forEach(h => {
+    const badge = document.getElementById('adv-' + h.id);
+    if (!badge) return;
+    badge.classList.remove('show', 'good', 'bad');
+    if (picked.has(h.id) || enemies.length === 0) return;
+    let totalAdv = 0, count = 0;
+    enemies.forEach(eid => {
+      const matchups = matchupCache[eid];
+      if (!matchups) return;
+      const m = matchups.find(x => x.hero_id === h.id);
+      if (m && m.games_played > 50) { totalAdv += (m.wins / m.games_played - 0.5) * 100; count++; }
+    });
+    if (count > 0 && Math.abs(totalAdv) > 1) {
+      badge.classList.add('show', totalAdv > 0 ? 'good' : 'bad');
+      badge.textContent = totalAdv > 0 ? `+${totalAdv.toFixed(0)}` : totalAdv.toFixed(0);
+    }
+  });
+}
+
+// ====== Hero Detail Modal ======
+async function showHeroDetail(id) {
+  const h = heroMap[id];
+  if (!h) return;
+  const modal = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+  const attrColor = h.attr === 'str' ? 'var(--str)' : h.attr === 'agi' ? 'var(--agi)' : h.attr === 'int' ? 'var(--int)' : 'var(--all)';
+  const ph = playerMap[id];
+
+  let personalHtml = '';
+  if (ph && ph.games > 0) {
+    const wrColor = ph.wr >= 55 ? 'var(--green)' : ph.wr < 45 ? 'var(--red)' : 'var(--text)';
+    const lastPlayed = ph.lastPlayed > 0 ? new Date(ph.lastPlayed * 1000).toLocaleDateString() : 'Never';
+    personalHtml = `<div class="personal-stats">
+      <h3>Your Stats</h3>
+      <div class="personal-stats-grid">
+        <div class="ps-item"><div class="ps-label">Games</div><div class="ps-value">${ph.games}</div></div>
+        <div class="ps-item"><div class="ps-label">Win Rate</div><div class="ps-value" style="color:${wrColor}">${ph.wr}%</div></div>
+        <div class="ps-item"><div class="ps-label">Last Played</div><div class="ps-value" style="font-size:13px">${lastPlayed}</div></div>
+      </div>
+    </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="modal-header">
+      <img src="${h.img}" alt="${h.name}">
+      <div>
+        <h2>${h.name}</h2>
+        <div class="hero-meta">
+          <span style="color:${attrColor};font-weight:700">${h.attr.toUpperCase()}</span> &middot;
+          ${h.attack} &middot; ${h.roles.join(', ')}
+        </div>
+      </div>
+    </div>
+    ${personalHtml}
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">Global WR</div><div class="stat-value" style="color:${h.winRate >= 50 ? 'var(--green)' : 'var(--red)'}">${h.winRate}%</div></div>
+      <div class="stat-card"><div class="stat-label">STR</div><div class="stat-value" style="color:var(--str)">${h.baseStr} <small>+${h.strGain}</small></div></div>
+      <div class="stat-card"><div class="stat-label">AGI</div><div class="stat-value" style="color:var(--agi)">${h.baseAgi} <small>+${h.agiGain}</small></div></div>
+      <div class="stat-card"><div class="stat-label">INT</div><div class="stat-value" style="color:var(--int)">${h.baseInt} <small>+${h.intGain}</small></div></div>
+      <div class="stat-card"><div class="stat-label">Speed</div><div class="stat-value">${h.moveSpeed}</div></div>
+      <div class="stat-card"><div class="stat-label">Armor</div><div class="stat-value">${h.armor}</div></div>
+    </div>
+    <div class="matchup-section">
+      <h3>Matchups</h3>
+      <div id="matchup-loading" class="loading-text"><span class="spinner"></span> Loading...</div>
+      <div class="matchup-grid" id="matchup-grid" style="display:none"></div>
+    </div>
+  `;
+
+  modal.classList.add('show');
+
+  const matchups = await getMatchups(id);
+  const loading = document.getElementById('matchup-loading');
+  const grid = document.getElementById('matchup-grid');
+  if (matchups.length === 0) { loading.textContent = 'No matchup data available'; return; }
+  const withWr = matchups.filter(m => m.games_played > 100 && heroMap[m.hero_id]).map(m => ({...m, wr: m.wins / m.games_played}));
+  const best = [...withWr].sort((a,b) => b.wr - a.wr).slice(0, 8);
+  const worst = [...withWr].sort((a,b) => a.wr - b.wr).slice(0, 8);
+
+  function renderMU(items, label) {
+    return `<div>
+      <h3 style="color:${label==='Best'?'var(--green)':'var(--red)'};font-size:12px;margin-bottom:6px">${label} against</h3>
+      <div class="matchup-list">${items.map(m => {
+        const hero = heroMap[m.hero_id];
+        const adv = ((m.wr - 0.5) * 100).toFixed(1);
+        return `<div class="matchup-item"><img src="${hero.img}" alt="${hero.name}"><span>${hero.name}</span><span class="mu-adv" style="color:${m.wr>0.5?'var(--green)':'var(--red)'}">${adv>0?'+':''}${adv}%</span></div>`;
+      }).join('')}</div></div>`;
+  }
+
+  loading.style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = renderMU(best, 'Best') + renderMU(worst, 'Worst');
+}
+
+function closeModal(e) { if (e.target === document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('show'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.getElementById('modal-overlay').classList.remove('show'); });
+
+init();
+</script>
+</body>
+</html>
