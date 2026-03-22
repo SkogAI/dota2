@@ -182,9 +182,9 @@ async function main() {
 
   // Replace the P data
   const dataLine = `var P = ${JSON.stringify(players)};`;
-  const updated = html.replace(/var P = \[.*?\];/s, dataLine);
+  const updated = html.replace(/var P = \[.*?\];/s, () => dataLine);
 
-  if (updated === html) {
+  if (updated === html && !(/var P = \[.*?\];/s.test(html))) {
     console.error('ERROR: Could not find var P = [...] in squad-stats.html');
     process.exit(1);
   }
