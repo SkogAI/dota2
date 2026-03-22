@@ -7,6 +7,7 @@ const PLAYERS = [
   { name: 'Skogix', pid: '116550742' },
   { name: 'ZCOPE', pid: '37551669' },
   { name: '"Nagasaki" Brave Boy', pid: '1191295354' },
+  { name: 'kevin', pid: '21011960' },
 ];
 
 const RANK_NAMES = {
