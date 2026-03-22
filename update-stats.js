@@ -191,6 +191,14 @@ async function main() {
 
   fs.writeFileSync('squad-stats.html', updated);
   console.log('  squad-stats.html updated!');
+
+  // Also update worst-matches.html
+  const worstHtml = fs.readFileSync('worst-matches.html', 'utf8');
+  const worstUpdated = worstHtml.replace(/var P = \[.*?\];/s, () => dataLine);
+  if (worstUpdated !== worstHtml) {
+    fs.writeFileSync('worst-matches.html', worstUpdated);
+    console.log('  worst-matches.html updated!');
+  }
 }
 
 main().catch(e => {
